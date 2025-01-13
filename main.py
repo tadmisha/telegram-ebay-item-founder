@@ -19,6 +19,14 @@ def to_float(num_str: str) -> float:
     return float(num_float)
 
 
+# & Shorten ebay item url
+def shorten_url(url: str) -> str:
+    match = re.search(r'/itm/(\d+)', url)
+    item_id = match.group(1)
+    shortened_url = f"https://www.ebay.com/itm/{item_id}"
+    return shortened_url
+
+
 # & Get soup by url
 def get_soup(url: str, headers: dict[str:str] = {}) -> bs:
     r = requests.get(url, headers=headers)
@@ -37,7 +45,7 @@ def get_listings(url: str) -> list:
         if "s-item" in listing.get("class"):
             listings.append({})
             url = listing.find("a").get("href")
-            listings[-1]["url"] = url
+            listings[-1]["url"] = shorten_url(url)
 
             # ! Dividing listings to buy it nows and auctions
             # ~ Only auctions have "s-item__bids" class
