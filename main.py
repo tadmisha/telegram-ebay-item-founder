@@ -1,14 +1,50 @@
 import os
 from dotenv import load_dotenv
+import requests
+from bs4 import BeautifulSoup as bs
 from telegram import Update
 from telegram.ext import Application, CommandHandler, CallbackContext, Job
 
 load_dotenv()
+
+# * Token of the telegram bot
 TOKEN = os.getenv("TOKEN")
 
-# & Finding offers function
-def find_offers():
-    return True 
+
+# & Get soup by url
+def get_soup(url: str, headers: dict[str:str] = {}) -> bs:
+    r = requests.get(url, headers=headers)
+    soup = bs(r.content, "html.parser")
+    return soup
+
+
+# & Getting all the listings with given url
+def get_listings(url: str) -> list:
+    r = requests.get(url)
+    soup = bs(r.content, "html.parser")
+    auction = []
+    buynow = []
+    listings = soup.find("ul", {"class": "srp-results srp-list clearfix"}).find_all("li")
+    for listing in listings:
+        if "s-item" in listing.get("class"):
+            url = listing.find("a").get("href")
+            # ! Dividing listings to buy it nows and auctions
+            # ~ Only auctions have "s-item__bids" class
+            if listing.find("span", {"class": "s-item__bids"}) is None:
+                buynow.append(url)
+            else:
+                auction.append(url)
+        else:
+            break
+    return {"auction": auction, "buynow": buynow}
+
+
+# & Finding good buynow offers
+def find_offers(auctions: list[str], max_price: int):
+    for url in auctions:
+
+        
+
 
 # & Checks if function found anything every n period of time and notifies if it does
 async def check_function(context: CallbackContext):
