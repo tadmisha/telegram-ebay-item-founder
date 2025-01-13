@@ -10,6 +10,11 @@ load_dotenv()
 # * Token of the telegram bot
 TOKEN = os.getenv("TOKEN")
 
+# & Converting string price to float
+def to_float(num_str: str) -> float:
+    num_float = ''.join(char for char in num_str if char.isdigit() or char in ".,-")
+    return float(num_float)
+
 
 # & Get soup by url
 def get_soup(url: str, headers: dict[str:str] = {}) -> bs:
@@ -22,29 +27,39 @@ def get_soup(url: str, headers: dict[str:str] = {}) -> bs:
 def get_listings(url: str) -> list:
     r = requests.get(url)
     soup = bs(r.content, "html.parser")
-    auction = []
-    buynow = []
-    listings = soup.find("ul", {"class": "srp-results srp-list clearfix"}).find_all("li")
-    for listing in listings:
+    listing_soups = soup.find("ul", {"class": "srp-results srp-list clearfix"}).find_all("li")
+    listings = []
+    
+    for listing in listing_soups:
         if "s-item" in listing.get("class"):
+            listings.append({})
             url = listing.find("a").get("href")
+            listings[-1]["url"] = url
+
             # ! Dividing listings to buy it nows and auctions
             # ~ Only auctions have "s-item__bids" class
+            # ? Formats: 1 - Buy it now, 2 - Auction, 3 - Auction with but it now price
             if listing.find("span", {"class": "s-item__bids"}) is None:
-                buynow.append(url)
+                format =  1
             else:
-                auction.append(url)
+                if len(listing.find_all("span", {"class": "s-item__price"})) > 1:
+                    format =  3
+                format =  2
+
+            listings[-1]["format"] = format
+            try: listings[-1]["price"] = [to_float(price.text.split("to")[0]) for price in listing.find_all("span", {"class": "s-item__price"})]
+            except ValueError: ... # ~ The "tap to see price" listings
+
         else:
             break
-    return {"auction": auction, "buynow": buynow}
+
+    return listings
 
 
-# & Finding good buynow offers
+# & Finding offers with given max price
 def find_offers(auctions: list[str], max_price: int):
-    for url in auctions:
-
+    ...
         
-
 
 # & Checks if function found anything every n period of time and notifies if it does
 async def check_function(context: CallbackContext):
