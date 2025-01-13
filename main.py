@@ -4,6 +4,7 @@ import requests
 from bs4 import BeautifulSoup as bs
 from telegram import Update
 from telegram.ext import Application, CommandHandler, CallbackContext, Job
+import re
 
 load_dotenv()
 
